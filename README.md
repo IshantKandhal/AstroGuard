@@ -138,3 +138,7 @@ day,date,resting_hr,spo2,sleep_hours,stress_score
 - In the app: optional alert explanations by the Google Gemini API. Alert levels are decided by rules, not by the SI.
 - Data: simulated by a Python script (data_generator.py). It is not real astronaut data.
 
+## Project Demo
+
+- Demo slides: https://drive.google.com/file/d/17GOvjrqdrgcLFHYW-0mHpgE-FHQRB8JP/view?usp=sharing
+- Demo video: https://drive.google.com/file/d/1D_ovF0AOhQW2Dxu19sq5WntRxE2MgX06/view?usp=sharing

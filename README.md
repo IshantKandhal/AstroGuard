@@ -131,3 +131,10 @@ day,date,resting_hr,spo2,sleep_hours,stress_score
 - Optional internet for Gemini explanations (rule-based fallback works offline)
 - Thresholds are illustrative, not clinically validated
 
+## Use of Super Intelligence (SI)
+
+- Code: written largely with Google Antigravity (Gemini) from step-by-step prompts written by our team. We reviewed, ran and tested it (42 automated tests).
+- Planning, documentation and checklists: drafted with Claude (Anthropic).
+- In the app: optional alert explanations by the Google Gemini API. Alert levels are decided by rules, not by the SI.
+- Data: simulated by a Python script (data_generator.py). It is not real astronaut data.
+

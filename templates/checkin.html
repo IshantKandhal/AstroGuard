@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Check-in - AstroGuard{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Daily Mental Wellness Check-in</h2>
+    <p style="color: var(--text-muted); font-size: 13px;">
+      Log your subjective wellness to compute your daily stress score. Updating today's check-in immediately refreshes the timeline anomaly engine.
+    </p>
+  </div>
+
+  <form action="{{ url_for('checkin') }}" method="POST">
+    <!-- Date Selector (defaults to latest timeline date) -->
+    <div class="form-group">
+      <label for="checkin-date">Observation Date</label>
+      <input type="date" id="checkin-date" name="date" value="{{ default_date }}" required>
+      <small style="color: var(--text-dim); font-size: 11px;">
+        Defaults to the latest date in your mission timeline ({{ default_date }}).
+      </small>
+    </div>
+
+    <!-- Question 1: Mood -->
+    <div class="form-group">
+      <label>1. How tense or anxious do you feel?</label>
+      <div class="radio-scale">
+        <label class="radio-opt"><input type="radio" name="mood" value="1" required><span>1 (Not at all)</span></label>
+        <label class="radio-opt"><input type="radio" name="mood" value="2"><span>2</span></label>
+        <label class="radio-opt"><input type="radio" name="mood" value="3" checked><span>3 (Moderate)</span></label>
+        <label class="radio-opt"><input type="radio" name="mood" value="4"><span>4</span></label>
+        <label class="radio-opt"><input type="radio" name="mood" value="5"><span>5 (Extremely)</span></label>
+      </div>
+    </div>
+
+    <!-- Question 2: Sleep Quality -->
+    <div class="form-group">
+      <label>2. How poorly did you sleep?</label>
+      <div class="radio-scale">
+        <label class="radio-opt"><input type="radio" name="sleep_quality" value="1" required><span>1 (Not at all)</span></label>
+        <label class="radio-opt"><input type="radio" name="sleep_quality" value="2"><span>2</span></label>
+        <label class="radio-opt"><input type="radio" name="sleep_quality" value="3" checked><span>3 (Moderate)</span></label>
+        <label class="radio-opt"><input type="radio" name="sleep_quality" value="4"><span>4</span></label>
+        <label class="radio-opt"><input type="radio" name="sleep_quality" value="5"><span>5 (Extremely)</span></label>
+      </div>
+    </div>
+
+    <!-- Question 3: Workload -->
+    <div class="form-group">
+      <label>3. How overwhelming is your workload?</label>
+      <div class="radio-scale">
+        <label class="radio-opt"><input type="radio" name="workload" value="1" required><span>1 (Not at all)</span></label>
+        <label class="radio-opt"><input type="radio" name="workload" value="2"><span>2</span></label>
+        <label class="radio-opt"><input type="radio" name="workload" value="3" checked><span>3 (Moderate)</span></label>
+        <label class="radio-opt"><input type="radio" name="workload" value="4"><span>4</span></label>
+        <label class="radio-opt"><input type="radio" name="workload" value="5"><span>5 (Extremely)</span></label>
+      </div>
+    </div>
+
+    <!-- Question 4: Physical Comfort -->
+    <div class="form-group">
+      <label>4. How much physical discomfort do you have?</label>
+      <div class="radio-scale">
+        <label class="radio-opt"><input type="radio" name="physical_comfort" value="1" required><span>1 (Not at all)</span></label>
+        <label class="radio-opt"><input type="radio" name="physical_comfort" value="2"><span>2</span></label>
+        <label class="radio-opt"><input type="radio" name="physical_comfort" value="3" checked><span>3 (Moderate)</span></label>
+        <label class="radio-opt"><input type="radio" name="physical_comfort" value="4"><span>4</span></label>
+        <label class="radio-opt"><input type="radio" name="physical_comfort" value="5"><span>5 (Extremely)</span></label>
+      </div>
+    </div>
+
+    <!-- Optional Notes Box -->
+    <div class="form-group">
+      <label for="notes">Mission Operational Notes (Optional, max 300 characters)</label>
+      <textarea id="notes" name="notes" rows="3" maxlength="300" placeholder="e.g. Conducted extravehicular maintenance or experienced mild cabin noise. Notes remain strictly local in audit log."></textarea>
+      <small style="color: var(--text-dim); font-size: 11px;">
+        Strict privacy: Subjective notes are logged to the database and never transmitted to external APIs.
+      </small>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Check-in & Recalculate Vitals</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

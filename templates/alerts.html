@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Alert Log - AstroGuard{% endblock %}
+
+{% block content %}
+<div class="table-card">
+  <div class="table-header">
+    <div>
+      <h3>Anomaly Alert History</h3>
+      <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+        Evaluated from Day {{ evaluation_start_day }} onward. Click any row to view full telemetry for that mission day.
+      </p>
+    </div>
+
+    <!-- Severity Filter Controls -->
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('alerts_page', level='All') }}" class="btn btn-secondary btn-sm {% if filter_level == 'All' %}active{% endif %}">All</a>
+      <a href="{{ url_for('alerts_page', level='Critical') }}" class="btn btn-secondary btn-sm {% if filter_level == 'Critical' %}active{% endif %}" style="color: #F87171;">Critical</a>
+      <a href="{{ url_for('alerts_page', level='Watch') }}" class="btn btn-secondary btn-sm {% if filter_level == 'Watch' %}active{% endif %}" style="color: #FBBF24;">Watch</a>
+    </div>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 100px;">Date</th>
+        <th style="width: 70px;">Day</th>
+        <th style="width: 100px;">Level</th>
+        <th style="width: 220px;">Triggered Vitals</th>
+        <th>Explanation & Clinical Summary</th>
+        <th style="width: 100px; text-align: right;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if not alerts %}
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">
+            No alerts matching the selected filter.
+          </td>
+        </tr>
+      {% else %}
+        {% for a in alerts %}
+          <tr class="clickable-row" onclick="window.location.href='{{ url_for('dashboard', day=a.day) }}'">
+            <td><strong>{{ a.date }}</strong></td>
+            <td>Day {{ a.day }}</td>
+            <td>
+              <span class="status-badge {{ a.level }}">{{ a.level }}</span>
+            </td>
+            <td>
+              {% if a.metrics_triggered %}
+                {{ a.metrics_triggered | join(', ') }}
+              {% else %}
+                &mdash;
+              {% endif %}
+            </td>
+            <td>{{ a.explanation or 'Telemetry deviation registered.' }}</td>
+            <td style="text-align: right;">
+              <a href="{{ url_for('dashboard', day=a.day) }}" class="btn btn-secondary btn-sm">Inspect</a>
+            </td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+

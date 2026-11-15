@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AstroGuard Telemetry{% endblock %}
+
+{% block content %}
+{% if is_empty %}
+  <!-- Empty State Banner -->
+  <div class="form-card" style="text-align: center; padding: 48px 24px;">
+    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 12px;">No Telemetry Loaded Yet</h2>
+    <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
+      Welcome to AstroGuard. Load the 60-day Mars mission dataset or upload your own telemetry CSV to establish a personal baseline and monitor vitals.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+      <form action="{{ url_for('load_demo') }}" method="POST">
+        <button type="submit" class="btn btn-primary">Load Mars Demo Data (60 Days)</button>
+      </form>
+      <a href="{{ url_for('upload_page') }}" class="btn btn-secondary">Upload CSV File</a>
+    </div>
+  </div>
+
+{% else %}
+
+  <!-- Mission Controls & Day Selector Bar -->
+  <div class="controls-bar">
+    <div class="day-picker">
+      <label for="day-select">Telemetry as of:</label>
+      <select id="day-select" onchange="window.location.href='/?day=' + this.value">
+        {% for d in all_days %}
+          <option value="{{ d.day }}" {% if d.day == selected_day %}selected{% endif %}>
+            Day {{ d.day }} &mdash; {{ d.date }} {% if d.level == 'Critical' %}[CRITICAL]{% elif d.level == 'Watch' %}[WATCH]{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+
+      <span style="color: var(--text-dim); font-size: 12px;">
+        (Baseline calibrated Days 1&ndash;{{ baseline_days }})
+      </span>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      {% if latest_critical_day %}
+        <a href="{{ url_for('dashboard', day=latest_critical_day) }}" class="btn btn-critical btn-sm" title="Jump to Day {{ latest_critical_day }}">
+          Jump to Latest Critical Alert (Day {{ latest_critical_day }})
+        </a>
+      {% endif %}
+      {% if selected_day != latest_day %}
+        <a href="{{ url_for('dashboard', day=latest_day) }}" class="btn btn-secondary btn-sm">
+          Jump to Latest (Day {{ latest_day }})
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Status Card Banner -->
+  <section class="status-card {{ current_level }}" aria-labelledby="status-heading">
+    <div class="status-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="status-badge {{ current_level }}" id="status-heading">
+          Health Status: {{ current_level | upper }}
+        </span>
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">
+          Day {{ selected_day }} ({{ selected_date }})
+        </span>
+      </div>
+      <span class="explanation-source {{ 'ai' if explanation_source == 'gemini' else '' }}" id="explanation-label">
+        {{ explanation_label }}
+      </span>
+    </div>
+
+    <p class="explanation-body" id="explanation-text">
+      {{ explanation_text }}
+    </p>
+
+    <div>
+      <strong style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);">
+        Recommended Immediate Actions:
+      </strong>
+      <ul class="action-bullets" id="action-bullets" style="margin-top: 6px;">
+        {% for act in action_bullets %}
+          <li>{{ act }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Metric Cards Grid -->
+  <section class="metrics-grid" aria-label="Key Vital Metrics">
+    <!-- Resting Heart Rate -->
+    <div class="metric-card">
+      <div class="metric-title">Resting Heart Rate</div>
+      <div class="metric-value-row">
+        <div class="metric-value">
+          {% if current_vitals.resting_hr is not none %}{{ current_vitals.resting_hr | round(1) }}<span class="metric-unit">bpm</span>{% else %}&mdash;{% endif %}
+        </div>
+        <span class="metric-delta {{ hr_delta_class }}">
+          {{ hr_pct_shift }}
+        </span>
+      </div>
+      <div class="metric-baseline">
+        Baseline average: <strong>{{ baseline.resting_hr.mean | round(1) if baseline else 'Calibrating' }} bpm</strong>
+      </div>
+    </div>
+
+    <!-- Blood Oxygen (SpO2) -->
+    <div class="metric-card">
+      <div class="metric-title">Blood Oxygen (SpO2)</div>
+      <div class="metric-value-row">
+        <div class="metric-value">
+          {% if current_vitals.spo2 is not none %}{{ current_vitals.spo2 | round(1) }}<span class="metric-unit">%</span>{% else %}&mdash;{% endif %}
+        </div>
+        <span class="metric-delta {{ spo2_delta_class }}">
+          {{ spo2_pct_shift }}
+        </span>
+      </div>
+      <div class="metric-baseline">
+        Baseline average: <strong>{{ baseline.spo2.mean | round(1) if baseline else 'Calibrating' }}%</strong>
+      </div>
+    </div>
+
+    <!-- Sleep Duration -->
+    <div class="metric-card">
+      <div class="metric-title">Sleep Duration</div>
+      <div class="metric-value-row">
+        <div class="metric-value">
+          {% if current_vitals.sleep_hours is not none %}{{ current_vitals.sleep_hours | round(1) }}<span class="metric-unit">hrs</span>{% else %}&mdash;{% endif %}
+        </div>
+        <span class="metric-delta {{ sleep_delta_class }}">
+          {{ sleep_pct_shift }}
+        </span>
+      </div>
+      <div class="metric-baseline">
+        Baseline average: <strong>{{ baseline.sleep_hours.mean | round(1) if baseline else 'Calibrating' }} hrs</strong>
+      </div>
+    </div>
+
+    <!-- Self-Reported Stress -->
+    <div class="metric-card">
+      <div class="metric-title">Self-Reported Stress</div>
+      <div class="metric-value-row">
+        <div class="metric-value">
+          {% if current_vitals.stress_score is not none %}{{ current_vitals.stress_score | round(1) }}<span class="metric-unit">/10</span>{% else %}&mdash;{% endif %}
+        </div>
+        <span class="metric-delta {{ stress_delta_class }}">
+          {{ stress_pct_shift }}
+        </span>
+      </div>
+      <div class="metric-baseline">
+        Baseline average: <strong>{{ baseline.stress_score.mean | round(1) if baseline else 'Calibrating' }} / 10</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Vital Trends Grid -->
+  <section class="charts-grid" aria-label="Physiological Trend Charts">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Resting Heart Rate (bpm)</h3>
+        <div class="chart-legend-badge">
+          <span class="legend-line actual"></span> Vitals
+          <span class="legend-line baseline"></span> Baseline Average
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chart-hr"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Blood Oxygen SpO2 (%)</h3>
+        <div class="chart-legend-badge">
+          <span class="legend-line actual" style="background-color: #06B6D4;"></span> Vitals
+          <span class="legend-line baseline"></span> Baseline Average
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chart-spo2"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Sleep Duration (hrs)</h3>
+        <div class="chart-legend-badge">
+          <span class="legend-line actual" style="background-color: #8B5CF6;"></span> Vitals
+          <span class="legend-line baseline"></span> Baseline Average
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chart-sleep"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Self-Reported Stress (1-10)</h3>
+        <div class="chart-legend-badge">
+          <span class="legend-line actual" style="background-color: #F59E0B;"></span> Vitals
+          <span class="legend-line baseline"></span> Baseline Average
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chart-stress"></canvas>
+      </div>
+    </div>
+  </section>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not is_empty %}
+<script>
+  // Mission Timeline Data serialized from Flask
+  const chartTimeline = {{ timeline_json | safe }};
+  const selectedDayIndex = {{ selected_day }};
+  const baselineStats = {{ baseline_json | safe }};
+
+  // Helper to construct synchronized Chart.js configurations
+  function buildMetricChart(canvasId, metricKey, lineColor, baselineVal) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+
+    const labels = chartTimeline.map(item => 'Day ' + item.day);
+    const dataValues = chartTimeline.map(item => item[metricKey]);
+    const baselineData = chartTimeline.map(() => baselineVal);
+
+    // Dynamic point coloring and sizing based on alert severity and selected day
+    const pointColors = chartTimeline.map(item => {
+      if (item.day === selectedDayIndex) return '#FFFFFF';
+      if (item.level === 'Critical') return '#EF4444';
+      if (item.level === 'Watch') return '#F59E0B';
+      return lineColor;
+    });
+
+    const pointRadii = chartTimeline.map(item => {
+      if (item.day === selectedDayIndex) return 7;
+      if (item.level === 'Critical') return 5;
+      if (item.level === 'Watch') return 4;
+      return 2;
+    });
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Telemetry Reading',
+            data: dataValues,
+            borderColor: lineColor,
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointBackgroundColor: pointColors,
+            pointBorderColor: '#0B0F19',
+            pointBorderWidth: 1.5,
+            pointRadius: pointRadii,
+            pointHoverRadius: 8,
+            tension: 0.2,
+            spanGaps: false
+          },
+          {
+            label: 'Baseline Average',
+            data: baselineData,
+            borderColor: '#EF4444',
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1F2937',
+            titleColor: '#F9FAFB',
+            bodyColor: '#D1D5DB',
+            borderColor: '#374151',
+            borderWidth: 1,
+            callbacks: {
+              afterLabel: function(context) {
+                const item = chartTimeline[context.dataIndex];
+                if (item && item.level && item.level !== 'Normal') {
+                  return 'Status: ' + item.level.toUpperCase();
+                }
+                return '';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(55, 65, 81, 0.4)' },
+            ticks: {
+              color: '#9CA3AF',
+              maxTicksLimit: 12,
+              font: { size: 10 }
+            }
+          },
+          y: {
+            grid: { color: 'rgba(55, 65, 81, 0.4)' },
+            ticks: { color: '#9CA3AF', font: { size: 10 } }
+          }
+        }
+      }
+    });
+  }
+
+  // Initialize all 4 vital trend charts
+  if (baselineStats) {
+    buildMetricChart('chart-hr', 'resting_hr', '#3B82F6', baselineStats.resting_hr.mean);
+    buildMetricChart('chart-spo2', 'spo2', '#06B6D4', baselineStats.spo2.mean);
+    buildMetricChart('chart-sleep', 'sleep_hours', '#8B5CF6', baselineStats.sleep_hours.mean);
+    buildMetricChart('chart-stress', 'stress_score', '#F59E0B', baselineStats.stress_score.mean);
+  }
+
+  // Non-blocking asynchronous upgrade to Gemini AI explanation (if enabled)
+  const aiEnabled = {{ 'true' if ai_enabled else 'false' }};
+  const selectedDate = "{{ selected_date }}";
+
+  if (aiEnabled && selectedDate && document.getElementById('explanation-text')) {
+    fetch('/api/explanation/' + selectedDate)
+      .then(response => {
+        if (!response.ok) throw new Error('API explanation fetch skipped');
+        return response.json();
+      })
+      .then(data => {
+        if (data && data.source === 'gemini') {
+          const expTextElem = document.getElementById('explanation-text');
+          const expBadgeElem = document.getElementById('explanation-label');
+          const bulletsElem = document.getElementById('action-bullets');
+
+          if (expTextElem && data.text) {
+            expTextElem.textContent = data.text;
+          }
+          if (expBadgeElem && data.label) {
+            expBadgeElem.textContent = data.label;
+            expBadgeElem.classList.add('ai');
+          }
+          if (bulletsElem && data.actions && data.actions.length > 0) {
+            bulletsElem.innerHTML = '';
+            data.actions.forEach(action => {
+              const li = document.createElement('li');
+              li.textContent = action;
+              bulletsElem.appendChild(li);
+            });
+          }
+        }
+      })
+      .catch(() => {
+        // Silently preserve the fast rule-based explanation on network or quota errors
+      });
+  }
+</script>
+{% endif %}
+{% endblock %}
+

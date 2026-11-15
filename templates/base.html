@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AstroGuard - Astronaut Health Monitoring{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Offline pinned Chart.js library -->
+  <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+</head>
+<body>
+  <!-- Permanent Clinical Prototype Safety Banner -->
+  <aside class="disclaimer-banner" role="alert" aria-label="Medical Disclaimer">
+    Simulated data - student prototype, not for medical use
+  </aside>
+
+  <!-- Main Navigation Bar -->
+  <nav class="navbar" role="navigation" aria-label="Main Navigation">
+    <a href="{{ url_for('dashboard') }}" class="brand">
+      <span>AstroGuard</span>
+      <span class="brand-badge">ARES-V</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+      <li><a href="{{ url_for('checkin') }}" class="{% if request.endpoint == 'checkin' %}active{% endif %}">Daily Check-in</a></li>
+      <li><a href="{{ url_for('alerts_page') }}" class="{% if request.endpoint == 'alerts_page' %}active{% endif %}">Alert History</a></li>
+      <li><a href="{{ url_for('upload_page') }}" class="{% if request.endpoint == 'upload_page' %}active{% endif %}">Upload CSV</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <form action="{{ url_for('load_demo') }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-secondary btn-sm" title="Load Mars 60-day telemetry demo">Load Mars Demo Data</button>
+      </form>
+      <a href="{{ url_for('download_report') }}" class="btn btn-primary btn-sm" title="Download Ground Medical PDF Summary">Download Report</a>
+      <a href="{{ url_for('reset_confirm') }}" class="btn btn-critical btn-sm" title="Reset all telemetry">Reset</a>
+    </div>
+  </nav>
+
+  <!-- Flashed Notifications -->
+  <main class="container" id="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    AstroGuard Prototype &bull; Autonomous Long-Duration Space Mission Health Telemetry &bull; Ares-V Crew Monitoring
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+

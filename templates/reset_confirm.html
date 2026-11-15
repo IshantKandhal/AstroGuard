@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Reset - AstroGuard{% endblock %}
+
+{% block content %}
+<div class="form-card" style="text-align: center; border-color: var(--status-critical);">
+  <h2 style="font-size: 18px; font-weight: 800; color: #F87171; margin-bottom: 12px;">Confirm Telemetry Reset</h2>
+  <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-bottom: 24px;">
+    Warning: This action will completely erase all stored telemetry readings, check-in questionnaires, evaluated alerts, and cached explanations from the database. This action cannot be undone.
+  </p>
+
+  <form action="{{ url_for('reset_confirm') }}" method="POST" style="display: flex; gap: 12px; justify-content: center;">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel and Return</a>
+    <button type="submit" class="btn btn-critical">Yes, Permanently Clear All Telemetry</button>
+  </form>
+</div>
+{% endblock %}

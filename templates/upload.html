@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Upload CSV - AstroGuard{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Upload Telemetry CSV</h2>
+    <p style="color: var(--text-muted); font-size: 13px;">
+      Upload a mission telemetry CSV file. Data is validated and ingested in memory. Once loaded, the engine recalibrates the baseline and regenerates all anomaly alerts.
+    </p>
+  </div>
+
+  <form action="{{ url_for('upload_page') }}" method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="csv-file">Select Telemetry CSV File</label>
+      <input type="file" id="csv-file" name="file" accept=".csv" required>
+      <small style="color: var(--text-dim); font-size: 11px;">Max file size: 2 MB. Only valid .csv files accepted.</small>
+    </div>
+
+    <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); padding: 14px; border-radius: 6px; margin-bottom: 20px;">
+      <h4 style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">
+        Required CSV Column Format
+      </h4>
+      <code style="display: block; font-size: 12px; color: #93C5FD; font-family: monospace; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px;">
+        day,date,resting_hr,spo2,sleep_hours,stress_score<br/>
+        1,2026-01-01,61.8,97.6,6.7,3.1
+      </code>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Validate & Ingest CSV</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
